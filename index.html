@@ -7,7 +7,7 @@
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: Arial, sans-serif; background: #f0f2f5; min-height: 100vh; padding: 20px; }
-  .container { max-width: 750px; margin: 0 auto; }
+  .container { max-width: 700px; margin: 0 auto; }
   h1 { color: #1a1a2e; margin-bottom: 6px; font-size: 1.6rem; }
   .subtitle { color: #666; margin-bottom: 24px; font-size: 0.95rem; }
   .card { background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
@@ -17,260 +17,271 @@
     font-size: 0.95rem; transition: border-color 0.2s; background: #fafafa;
   }
   textarea:focus, input:focus, select:focus { outline: none; border-color: #5746e3; background: white; }
-  textarea { resize: vertical; min-height: 140px; }
-  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .full { grid-column: 1 / -1; }
-  .btn {
-    display: inline-block; padding: 13px 28px; border-radius: 8px; font-size: 1rem;
-    font-weight: 600; cursor: pointer; border: none; transition: all 0.2s;
+  textarea { resize: vertical; }
+  .btn-primary {
+    width: 100%; margin-top: 10px; padding: 13px; border-radius: 8px;
+    background: #5746e3; color: white; font-size: 1rem; font-weight: 600;
+    cursor: pointer; border: none; transition: background 0.2s;
   }
-  .btn-primary { background: #5746e3; color: white; width: 100%; margin-top: 8px; }
   .btn-primary:hover { background: #4535d2; }
   .btn-primary:disabled { background: #aaa; cursor: not-allowed; }
-  .btn-open { background: #16a34a; color: white; width: 100%; margin-top: 12px; font-size: 1.05rem; padding: 15px; }
+  .btn-open {
+    width: 100%; margin-top: 14px; padding: 15px; border-radius: 8px;
+    background: #16a34a; color: white; font-size: 1.05rem; font-weight: 700;
+    cursor: pointer; border: none; transition: background 0.2s;
+  }
   .btn-open:hover { background: #15803d; }
+  .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  .detail-box { background: #f8f7ff; border: 1.5px solid #ede9fe; border-radius: 8px; padding: 12px 14px; }
+  .detail-label { font-size: 0.75rem; font-weight: 700; color: #7c6fe0; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+  .detail-value { font-size: 0.95rem; color: #1a1a2e; font-weight: 500; }
+  .detail-value input { background: transparent; border: none; padding: 0; font-size: 0.95rem; color: #1a1a2e; font-weight: 500; width: 100%; }
+  .detail-value input:focus { outline: none; }
+  .detail-value select { background: transparent; border: none; padding: 0; font-size: 0.95rem; color: #1a1a2e; font-weight: 500; width: 100%; cursor: pointer; }
+  .detail-value select:focus { outline: none; }
+  .full { grid-column: 1 / -1; }
+  .summary-box { background: #f0fdf4; border: 1.5px solid #bbf7d0; border-radius: 8px; padding: 14px; margin-bottom: 14px; }
+  .summary-label { font-size: 0.75rem; font-weight: 700; color: #16a34a; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .summary-box textarea { background: transparent; border: none; padding: 0; font-size: 0.93rem; color: #1a1a2e; line-height: 1.6; min-height: 80px; }
+  .summary-box textarea:focus { outline: none; }
   .results { display: none; }
-  .tag { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; background: #ede9fe; color: #5746e3; margin-bottom: 16px; }
-  .note { font-size: 0.82rem; color: #888; margin-top: 8px; text-align: center; }
-  .spinner { display: none; text-align: center; padding: 12px; color: #5746e3; font-weight: 600; }
-  @media (max-width: 500px) { .grid { grid-template-columns: 1fr; } }
+  .spinner { display: none; text-align: center; padding: 10px; color: #5746e3; font-weight: 600; font-size: 0.95rem; }
+  .note { font-size: 0.8rem; color: #888; margin-top: 8px; text-align: center; }
+  @media (max-width: 480px) { .details-grid { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
 <div class="container">
   <h1>📋 Voicemail Form Filler</h1>
-  <p class="subtitle">Paste a voicemail transcript and we'll fill out the form automatically.</p>
+  <p class="subtitle">Paste a voicemail transcript — we'll pull the details and write the summary for you.</p>
 
   <div class="card">
     <label for="transcript">Voicemail Transcript</label>
-    <textarea id="transcript" placeholder="Paste the voicemail transcript here..."></textarea>
-    <button class="btn btn-primary" onclick="processTranscript()" id="analyzeBtn">Read Transcript &amp; Fill Form</button>
+    <textarea id="transcript" style="min-height:150px;" placeholder="Paste the voicemail transcript here..."></textarea>
+    <button class="btn-primary" onclick="processTranscript()" id="analyzeBtn">Extract Details &amp; Summary</button>
     <div class="spinner" id="spinner">Reading transcript...</div>
   </div>
 
   <div class="card results" id="results">
-    <div class="tag">Review &amp; Edit</div>
-    <p style="color:#555; margin-bottom:18px; font-size:0.9rem;">Check the fields below. Fix anything that looks wrong, then click Open Form.</p>
+    <div style="font-weight:700; font-size:1rem; color:#1a1a2e; margin-bottom:16px;">Key Details</div>
 
-    <div class="grid">
-      <div>
-        <label>Date (MM/DD/YYYY)</label>
-        <input type="text" id="r_date" placeholder="06/10/2026">
+    <div class="details-grid">
+      <div class="detail-box">
+        <div class="detail-label">Caller Name</div>
+        <div class="detail-value"><input id="r_name" type="text" placeholder="—"></div>
       </div>
-      <div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:8px;">
-        <div>
-          <label>Time</label>
-          <input type="text" id="r_time" placeholder="12:00">
+      <div class="detail-box">
+        <div class="detail-label">Phone Number</div>
+        <div class="detail-value"><input id="r_phone" type="text" placeholder="—"></div>
+      </div>
+      <div class="detail-box">
+        <div class="detail-label">Date</div>
+        <div class="detail-value"><input id="r_date" type="text" placeholder="MM/DD/YYYY"></div>
+      </div>
+      <div class="detail-box">
+        <div class="detail-label">Time</div>
+        <div class="detail-value" style="display:flex; gap:6px; align-items:center;">
+          <input id="r_time" type="text" placeholder="12:00" style="width:60px;">
+          <select id="r_ampm" style="width:70px;"><option>AM</option><option>PM</option></select>
         </div>
-        <div>
-          <label>AM/PM</label>
-          <select id="r_ampm"><option>AM</option><option>PM</option></select>
+      </div>
+      <div class="detail-box">
+        <div class="detail-label">Call Type</div>
+        <div class="detail-value">
+          <select id="r_calltype">
+            <option>Emergency</option><option>Lead (Leasing)</option><option>Other</option>
+            <option>Owner</option><option>Resident</option><option>Worker</option>
+          </select>
         </div>
-        <div style="display:flex; align-items:flex-end;">
-        </div>
       </div>
-      <div>
-        <label>Call Type</label>
-        <select id="r_calltype">
-          <option>Emergency</option>
-          <option>Lead (Leasing)</option>
-          <option>Other</option>
-          <option>Owner</option>
-          <option>Resident</option>
-          <option>Worker</option>
-        </select>
+      <div class="detail-box">
+        <div class="detail-label">City</div>
+        <div class="detail-value"><input id="r_city" type="text" placeholder="—"></div>
       </div>
-      <div>
-        <label>Caller Name</label>
-        <input type="text" id="r_name" placeholder="Full name">
-      </div>
-      <div>
-        <label>Phone Number</label>
-        <input type="text" id="r_phone" placeholder="330-949-9233">
-      </div>
-      <div>
-        <label>City</label>
-        <input type="text" id="r_city" placeholder="Columbus">
-      </div>
-      <div class="full">
-        <label>Property Address</label>
-        <input type="text" id="r_address" placeholder="900 East Thirteenth Avenue, Columbus OH">
-      </div>
-      <div class="full">
-        <label>Inquiry / Summary</label>
-        <textarea id="r_inquiry" style="min-height:90px;"></textarea>
+      <div class="detail-box full">
+        <div class="detail-label">Property Address</div>
+        <div class="detail-value"><input id="r_address" type="text" placeholder="—"></div>
       </div>
     </div>
 
-    <button class="btn btn-open" onclick="openForm()">Open Pre-Filled Form in New Tab</button>
-    <p class="note">The form will open with all fields filled. Review and click Susunod → Isumite to submit.</p>
+    <div class="summary-box">
+      <div class="summary-label">Summary Message</div>
+      <textarea id="r_inquiry"></textarea>
+    </div>
+
+    <button class="btn-open" onclick="openForm()">Open Pre-Filled Form →</button>
+    <p class="note">Form opens in a new tab, already filled in. Click Susunod → Isumite to submit.</p>
   </div>
 </div>
 
 <script>
 const FORM_BASE = "https://docs.google.com/forms/d/e/1FAIpQLSfRjB5LSEfQHgI3Ew4GaRaOMEjLO7k4Vq-2zzaxSlt6PyO9nA/viewform";
-const ENTRY_DATE = "1365003201", ENTRY_TIME = "1132666168", ENTRY_CALLTYPE = "1228861024";
+const ENTRY_DATE="1365003201", ENTRY_TIME="1132666168", ENTRY_CALLTYPE="1228861024";
 const ENTRY_IDS = {
-  "Resident":       {name:"1352014911", phone:"672229889",  address:"1378368785", inquiry:"1074280340", city:"520241761"},
-  "Lead (Leasing)": {name:"977848052",  phone:"1511733965", inquiry:"1250825539"},
-  "Worker":         {name:"1819818518", inquiry:"519057867"},
-  "Owner":          {name:"44469820",   inquiry:"2051184989"},
-  "Other":          {name:"703619804",  phone:"1955131867", inquiry:"1507646955"},
-  "Emergency":      {name:"703619804",  phone:"1955131867", inquiry:"1507646955"},
+  "Resident":       {name:"1352014911",phone:"672229889", address:"1378368785",inquiry:"1074280340",city:"520241761"},
+  "Lead (Leasing)": {name:"977848052", phone:"1511733965",inquiry:"1250825539"},
+  "Worker":         {name:"1819818518",inquiry:"519057867"},
+  "Owner":          {name:"44469820",  inquiry:"2051184989"},
+  "Other":          {name:"703619804", phone:"1955131867",inquiry:"1507646955"},
+  "Emergency":      {name:"703619804", phone:"1955131867",inquiry:"1507646955"},
 };
+const MONTHS={january:1,february:2,march:3,april:4,may:5,june:6,july:7,august:8,september:9,october:10,november:11,december:12,jan:1,feb:2,mar:3,apr:4,jun:6,jul:7,aug:8,sep:9,sept:9,oct:10,nov:11,dec:12};
 
-const MONTHS = {january:1,february:2,march:3,april:4,may:5,june:6,july:7,august:8,september:9,october:10,november:11,december:12,jan:1,feb:2,mar:3,apr:4,jun:6,jul:7,aug:8,sep:9,sept:9,oct:10,nov:11,dec:12};
+function today(){const d=new Date();return`${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}/${d.getFullYear()}`;}
+function toTitle(s){return s.replace(/\w\S*/g,w=>w[0].toUpperCase()+w.slice(1).toLowerCase());}
 
-function today() {
-  const d = new Date();
-  return `${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}/${d.getFullYear()}`;
-}
-
-function extractDate(t) {
-  let m = t.match(/\b(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})\b/);
-  if (m) { let y=+m[3]; if(y<100)y+=2000; return `${String(+m[1]).padStart(2,'0')}/${String(+m[2]).padStart(2,'0')}/${y}`; }
-  const mp = Object.keys(MONTHS).join('|');
-  m = t.match(new RegExp(`\\b(${mp})\\.?\\s+(\\d{1,2})(?:st|nd|rd|th)?(?:,?\\s*(\\d{4}))?\\b`,'i'));
-  if (m) { const mo=MONTHS[m[1].toLowerCase().replace('.','')]; const y=m[3]||new Date().getFullYear(); return `${String(mo).padStart(2,'0')}/${String(+m[2]).padStart(2,'0')}/${y}`; }
+function extractDate(t){
+  let m=t.match(/\b(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})\b/);
+  if(m){let y=+m[3];if(y<100)y+=2000;return`${String(+m[1]).padStart(2,'0')}/${String(+m[2]).padStart(2,'0')}/${y}`;}
+  const mp=Object.keys(MONTHS).join('|');
+  m=t.match(new RegExp(`\\b(${mp})\\.?\\s+(\\d{1,2})(?:st|nd|rd|th)?(?:,?\\s*(\\d{4}))?\\b`,'i'));
+  if(m){const mo=MONTHS[m[1].toLowerCase().replace('.','')];const y=m[3]||new Date().getFullYear();return`${String(mo).padStart(2,'0')}/${String(+m[2]).padStart(2,'0')}/${y}`;}
   return today();
 }
-
-function extractTime(t) {
-  let m = t.match(/\b(\d{1,2}):(\d{2})\s*(a\.?m\.?|p\.?m\.?)\b/i);
-  if (m) return [m[1], m[2], m[3].toLowerCase().startsWith('a')?'AM':'PM'];
-  m = t.match(/\b(\d{1,2})\s*(a\.?m\.?|p\.?m\.?)\b/i);
-  if (m) return [m[1], '00', m[2].toLowerCase().startsWith('a')?'AM':'PM'];
-  return ['12','00','PM'];
+function extractTime(t){
+  let m=t.match(/\b(\d{1,2}):(\d{2})\s*(a\.?m\.?|p\.?m\.?)\b/i);
+  if(m)return[m[1],m[2],m[3].toLowerCase().startsWith('a')?'AM':'PM'];
+  m=t.match(/\b(\d{1,2})\s*(a\.?m\.?|p\.?m\.?)\b/i);
+  if(m)return[m[1],'00',m[2].toLowerCase().startsWith('a')?'AM':'PM'];
+  return['12','00','PM'];
+}
+function extractCallType(t){
+  const l=t.toLowerCase();
+  if(/emergency|urgent|fire|flood|burst pipe|gas leak|no heat|no water/.test(l))return'Emergency';
+  if(/lease|leasing|available unit|vacancy|move.?in|floor plan|bedroom|application|interested in renting|showing/.test(l))return'Lead (Leasing)';
+  if(/owner|landlord|property manager/.test(l))return'Owner';
+  if(/resident|tenant|i live here|my unit|my apartment|currently live|rented unit|previously rented/.test(l))return'Resident';
+  if(/maintenance|repair|technician|contractor|vendor|worker/.test(l))return'Worker';
+  return'Other';
+}
+function extractName(t){
+  let m=t.match(/again(?:,)?\s+(?:my name is\s+)?([A-Za-z]+(?:\s+[A-Za-z]+){1,2})/i);
+  if(m)return toTitle(m[1]);
+  m=t.match(/my name is\s+([A-Za-z]+(?:\s+[A-Za-z]+){0,2})/i);
+  if(m)return toTitle(m[1]);
+  m=t.match(/(?:this is|I am|I'm)\s+([A-Za-z]+(?:\s+[A-Za-z]+){0,2})/i);
+  if(m){const n=toTitle(m[1]);if(!['Calling','Looking','Calling'].includes(n))return n;}
+  return'';
+}
+function extractPhone(t){
+  let m=t.match(/area\s+code\s+(\d{3})[\.\s\-]+(\d{3})[\.\s\-]+(\d{4})/i);
+  if(m)return`${m[1]}-${m[2]}-${m[3]}`;
+  m=t.match(/\(?\b(\d{3})\)?[\s.\-]+(\d{3})[\s.\-]+(\d{4})\b/);
+  if(m)return`${m[1]}-${m[2]}-${m[3]}`;
+  return'';
+}
+function extractAddress(t){
+  let m=t.match(/located at ([^\.]+(?:Avenue|Ave|Street|St|Road|Rd|Drive|Dr|Lane|Ln|Blvd|Boulevard|Way|Court|Ct)[^\.]*)/i);
+  if(m)return m[1].trim();
+  m=t.match(/\b(\d+\s+(?:(?:East|West|North|South)\s+)?[A-Z][a-zA-Z\s]+(?:Avenue|Ave|Street|St|Road|Rd|Drive|Dr|Lane|Ln|Blvd|Boulevard)\b[^,\.]*)/);
+  if(m)return m[1].trim();
+  return'';
+}
+function extractCity(t){
+  let m=t.match(/\bin\s+([A-Z][a-zA-Z\s]+),?\s*(?:Ohio|OH|Florida|FL|Texas|TX|California|CA|Georgia|GA|Illinois|IL|Pennsylvania|PA|Michigan|MI|Arizona|AZ)\b/);
+  if(m)return m[1].trim();
+  m=t.match(/([A-Z][a-zA-Z\s]+),\s*(?:Ohio|OH|Florida|FL|Texas|TX|California|CA|Georgia|GA|Illinois|IL|Pennsylvania|PA|Michigan|MI|Arizona|AZ)\b/);
+  if(m)return m[1].trim();
+  return'';
 }
 
-function extractCallType(t) {
-  const l = t.toLowerCase();
-  if (/emergency|urgent|fire|flood|burst pipe|gas leak|no heat|no water/.test(l)) return 'Emergency';
-  if (/lease|leasing|available unit|vacancy|move.?in|floor plan|bedroom|application|interested in renting|showing/.test(l)) return 'Lead (Leasing)';
-  if (/owner|landlord|property manager/.test(l)) return 'Owner';
-  if (/resident|tenant|i live here|my unit|my apartment|currently live|rented unit|previously rented/.test(l)) return 'Resident';
-  if (/maintenance|repair|technician|contractor|vendor|worker/.test(l)) return 'Worker';
-  return 'Other';
-}
-
-function extractName(t) {
-  let m = t.match(/again(?:,)?\s+(?:my name is\s+)?([A-Za-z]+(?:\s+[A-Za-z]+){1,2})/i);
-  if (m) return toTitle(m[1]);
-  m = t.match(/my name is\s+([A-Za-z]+(?:\s+[A-Za-z]+){0,2})/i);
-  if (m) return toTitle(m[1]);
-  m = t.match(/(?:this is|I am|I'm)\s+([A-Za-z]+(?:\s+[A-Za-z]+){0,2})/i);
-  if (m) return toTitle(m[1]);
-  return '';
-}
-
-function extractPhone(t) {
-  let m = t.match(/area\s+code\s+(\d{3})[\.\s\-]+(\d{3})[\.\s\-]+(\d{4})/i);
-  if (m) return `${m[1]}-${m[2]}-${m[3]}`;
-  m = t.match(/\(?\b(\d{3})\)?[\s.\-]+(\d{3})[\s.\-]+(\d{4})\b/);
-  if (m) return `${m[1]}-${m[2]}-${m[3]}`;
-  return '';
-}
-
-function extractAddress(t) {
-  let m = t.match(/located at ([^\.]+(?:Avenue|Ave|Street|St|Road|Rd|Drive|Dr|Lane|Ln|Blvd|Boulevard|Way|Court|Ct)[^\.]*)/i);
-  if (m) return m[1].trim();
-  m = t.match(/\b(\d+\s+(?:(?:East|West|North|South)\s+)?[A-Z][a-zA-Z\s]+(?:Avenue|Ave|Street|St|Road|Rd|Drive|Dr|Lane|Ln|Blvd|Boulevard)\b[^,\.]*)/);
-  if (m) return m[1].trim();
-  return '';
-}
-
-function extractCity(t) {
-  let m = t.match(/\bin\s+([A-Z][a-zA-Z\s]+),?\s*(?:Ohio|OH|Florida|FL|Texas|TX|California|CA|Georgia|GA|Illinois|IL|Pennsylvania|PA|Michigan|MI|Arizona|AZ)\b/);
-  if (m) return m[1].trim();
-  m = t.match(/([A-Z][a-zA-Z\s]+),\s*(?:Ohio|OH|Florida|FL|Texas|TX|California|CA|Georgia|GA|Illinois|IL|Pennsylvania|PA|Michigan|MI|Arizona|AZ)\b/);
-  if (m) return m[1].trim();
-  return '';
-}
-
-function extractInquiry(t, name, phone, address) {
+function buildSummary(t, name, phone, address, city, callType) {
+  // Extract the reason for calling
   let reason = '';
-  const patterns = [
-    /calling (?:in )?regards? to (.{20,200}?)(?:\.\s|\band\b I|\bI also\b)/i,
-    /calling (?:about|regarding|to discuss) (.{20,200}?)(?:\.\s|\band\b)/i,
+  const reasonPatterns = [
+    /calling (?:in )?regards? to (.{20,250}?)(?:\.\s[A-Z]|\bI also\b|\bWe did\b)/i,
+    /calling (?:about|regarding|to discuss) (.{20,200}?)(?:\.\s[A-Z]|\band\b I)/i,
+    /(?:I am|I'm) calling (?:about|regarding|to) (.{20,200}?)(?:\.\s[A-Z]|\band\b)/i,
   ];
-  for (const p of patterns) {
-    const m = t.match(p);
-    if (m) { reason = m[1].replace(/\s+/g,' ').trim(); break; }
+  for(const p of reasonPatterns){
+    const m=t.match(p);
+    if(m){reason=m[1].replace(/\s+/g,' ').trim();break;}
   }
-  const parts = [];
-  if (name)    parts.push(`Caller: ${name}`);
-  if (phone)   parts.push(`Phone: ${phone}`);
-  if (address) parts.push(`Address: ${address}`);
-  if (reason)  parts.push(`Reason: ${reason}`);
-  else         parts.push(`Message: ${t.substring(0,200).trim()}...`);
-  return parts.join('\n');
+
+  // Extract callback request
+  const wantsCallback = /call.?back|reach (?:me|out)|contact me/i.test(t);
+
+  // Build a natural paragraph
+  let summary = '';
+  if(name) summary += `${name}`;
+  if(phone) summary += (summary ? ` (${phone})` : phone);
+  if(callType==='Resident'||callType==='Owner') summary += ' called';
+  else if(callType==='Lead (Leasing)') summary += ' called regarding a leasing inquiry';
+  else if(callType==='Worker') summary += ' called regarding a work-related matter';
+  else summary += ' called';
+
+  if(address) summary += ` regarding the property at ${address}${city?', '+city:''}`;
+  else if(city) summary += ` in ${city}`;
+  summary += '.';
+
+  if(reason) summary += ` They are calling about: ${reason}.`;
+
+  if(wantsCallback) summary += ` Caller is requesting a callback.`;
+
+  return summary.trim();
 }
 
-function toTitle(s) { return s.replace(/\w\S*/g, w => w[0].toUpperCase()+w.slice(1).toLowerCase()); }
+function processTranscript(){
+  const t=document.getElementById('transcript').value.trim();
+  if(!t)return;
+  document.getElementById('analyzeBtn').disabled=true;
+  document.getElementById('spinner').style.display='block';
 
-function processTranscript() {
-  const t = document.getElementById('transcript').value.trim();
-  if (!t) return;
-  document.getElementById('analyzeBtn').disabled = true;
-  document.getElementById('spinner').style.display = 'block';
+  setTimeout(()=>{
+    const date=extractDate(t);
+    const[hour,minute,ampm]=extractTime(t);
+    const callType=extractCallType(t);
+    const name=extractName(t);
+    const phone=extractPhone(t);
+    const address=extractAddress(t);
+    const city=extractCity(t);
+    const summary=buildSummary(t,name,phone,address,city,callType);
 
-  setTimeout(() => {
-    const date = extractDate(t);
-    const [hour, minute, ampm] = extractTime(t);
-    const callType = extractCallType(t);
-    const name = extractName(t);
-    const phone = extractPhone(t);
-    const address = extractAddress(t);
-    const city = extractCity(t);
-    const inquiry = extractInquiry(t, name, phone, address);
+    document.getElementById('r_date').value=date;
+    document.getElementById('r_time').value=`${hour}:${minute}`;
+    document.getElementById('r_ampm').value=ampm;
+    document.getElementById('r_calltype').value=callType;
+    document.getElementById('r_name').value=name;
+    document.getElementById('r_phone').value=phone;
+    document.getElementById('r_address').value=address;
+    document.getElementById('r_city').value=city;
+    document.getElementById('r_inquiry').value=summary;
 
-    document.getElementById('r_date').value = date;
-    document.getElementById('r_time').value = `${hour}:${minute}`;
-    document.getElementById('r_ampm').value = ampm;
-    document.getElementById('r_calltype').value = callType;
-    document.getElementById('r_name').value = name;
-    document.getElementById('r_phone').value = phone;
-    document.getElementById('r_address').value = address;
-    document.getElementById('r_city').value = city;
-    document.getElementById('r_inquiry').value = inquiry;
-
-    document.getElementById('results').style.display = 'block';
-    document.getElementById('spinner').style.display = 'none';
-    document.getElementById('analyzeBtn').disabled = false;
+    document.getElementById('results').style.display='block';
+    document.getElementById('spinner').style.display='none';
+    document.getElementById('analyzeBtn').disabled=false;
     document.getElementById('results').scrollIntoView({behavior:'smooth'});
-  }, 400);
+  },400);
 }
 
-function openForm() {
-  const timeVal = document.getElementById('r_time').value;
-  const [hStr, mStr] = timeVal.split(':');
-  const ampm = document.getElementById('r_ampm').value;
-  let hour = parseInt(hStr)||12;
-  if (ampm==='PM' && hour!==12) hour+=12;
-  else if (ampm==='AM' && hour===12) hour=0;
+function openForm(){
+  const timeVal=document.getElementById('r_time').value;
+  const[hStr,mStr]=(timeVal+':00').split(':');
+  const ampm=document.getElementById('r_ampm').value;
+  let hour=parseInt(hStr)||12;
+  if(ampm==='PM'&&hour!==12)hour+=12;
+  else if(ampm==='AM'&&hour===12)hour=0;
 
-  const dateParts = document.getElementById('r_date').value.split('/');
-  const [mo, d, yr] = dateParts.length===3 ? dateParts : [new Date().getMonth()+1, new Date().getDate(), new Date().getFullYear()];
+  const dp=document.getElementById('r_date').value.split('/');
+  const[mo,d,yr]=dp.length===3?dp:[String(new Date().getMonth()+1),String(new Date().getDate()),String(new Date().getFullYear())];
 
-  const callType = document.getElementById('r_calltype').value;
-  const ids = ENTRY_IDS[callType]||{};
-
-  const params = new URLSearchParams();
+  const callType=document.getElementById('r_calltype').value;
+  const ids=ENTRY_IDS[callType]||{};
+  const params=new URLSearchParams();
   params.set('usp','pp_url');
-  params.set(`entry.${ENTRY_DATE}_year`, yr);
-  params.set(`entry.${ENTRY_DATE}_month`, String(+mo));
-  params.set(`entry.${ENTRY_DATE}_day`, String(+d));
-  params.set(`entry.${ENTRY_TIME}_hour`, String(hour));
-  params.set(`entry.${ENTRY_TIME}_minute`, mStr||'00');
-  params.set(`entry.${ENTRY_CALLTYPE}`, callType);
+  params.set(`entry.${ENTRY_DATE}_year`,yr);
+  params.set(`entry.${ENTRY_DATE}_month`,String(+mo));
+  params.set(`entry.${ENTRY_DATE}_day`,String(+d));
+  params.set(`entry.${ENTRY_TIME}_hour`,String(hour));
+  params.set(`entry.${ENTRY_TIME}_minute`,mStr||'00');
+  params.set(`entry.${ENTRY_CALLTYPE}`,callType);
 
-  const fields = {name:'r_name', phone:'r_phone', address:'r_address', city:'r_city', inquiry:'r_inquiry'};
-  for (const [key, elId] of Object.entries(fields)) {
-    const val = document.getElementById(elId).value.trim();
-    if (val && ids[key]) params.set(`entry.${ids[key]}`, val);
+  const fields={name:'r_name',phone:'r_phone',address:'r_address',city:'r_city',inquiry:'r_inquiry'};
+  for(const[key,elId]of Object.entries(fields)){
+    const val=document.getElementById(elId).value.trim();
+    if(val&&ids[key])params.set(`entry.${ids[key]}`,val);
   }
-
-  window.open(`${FORM_BASE}?${params.toString()}`, '_blank');
+  window.open(`${FORM_BASE}?${params.toString()}`,'_blank');
 }
 </script>
 </body>
