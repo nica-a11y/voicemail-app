@@ -186,39 +186,39 @@ function extractCity(t){
 }
 
 function buildSummary(t, name, phone, address, city, callType) {
-  // Extract the reason for calling
-  let reason = '';
-  const reasonPatterns = [
-    /calling (?:in )?regards? to (.{20,250}?)(?:\.\s[A-Z]|\bI also\b|\bWe did\b)/i,
-    /calling (?:about|regarding|to discuss) (.{20,200}?)(?:\.\s[A-Z]|\band\b I)/i,
-    /(?:I am|I'm) calling (?:about|regarding|to) (.{20,200}?)(?:\.\s[A-Z]|\band\b)/i,
-  ];
-  for(const p of reasonPatterns){
-    const m=t.match(p);
-    if(m){reason=m[1].replace(/\s+/g,' ').trim();break;}
+  // Strip the greeting/intro
+  let core = t;
+  core = core.replace(/^.*?(?=I am calling|I'm calling|calling in|calling about|calling regarding|calling to)/i, '');
+
+  // Remove the sign-off / contact repeat at the end
+  core = core.replace(/(?:my best contact(?: number)? is|you can reach me at|again my name is|I'm looking forward|happy earliest|thank you[\.\s]*$).*$/i, '');
+
+  // Clean up extra spaces
+  core = core.replace(/\s+/g, ' ').trim();
+
+  // If we couldn't extract a core, use the middle 70% of the transcript
+  if (!core || core.length < 30) {
+    const words = t.split(' ');
+    const start = Math.floor(words.length * 0.15);
+    const end = Math.floor(words.length * 0.85);
+    core = words.slice(start, end).join(' ');
   }
 
-  // Extract callback request
-  const wantsCallback = /call.?back|reach (?:me|out)|contact me/i.test(t);
+  // Header line with key details
+  const parts = [];
+  if (name)     parts.push(`Caller: ${name}`);
+  if (phone)    parts.push(`Phone: ${phone}`);
+  if (callType) parts.push(`Call Type: ${callType}`);
+  if (address)  parts.push(`Address: ${address}${city ? ', ' + city : ''}`);
+  else if (city) parts.push(`City: ${city}`);
 
-  // Build a natural paragraph
-  let summary = '';
-  if(name) summary += `${name}`;
-  if(phone) summary += (summary ? ` (${phone})` : phone);
-  if(callType==='Resident'||callType==='Owner') summary += ' called';
-  else if(callType==='Lead (Leasing)') summary += ' called regarding a leasing inquiry';
-  else if(callType==='Worker') summary += ' called regarding a work-related matter';
-  else summary += ' called';
+  const header = parts.join('  |  ');
 
-  if(address) summary += ` regarding the property at ${address}${city?', '+city:''}`;
-  else if(city) summary += ` in ${city}`;
-  summary += '.';
+  // Check for callback request
+  const wantsCallback = /call.?back|reach (?:me|out)|contact me|give me a call/i.test(t);
+  const callbackNote = wantsCallback ? '\n\nAction needed: Caller is requesting a callback.' : '';
 
-  if(reason) summary += ` They are calling about: ${reason}.`;
-
-  if(wantsCallback) summary += ` Caller is requesting a callback.`;
-
-  return summary.trim();
+  return `${header}\n\n${core}${callbackNote}`;
 }
 
 function processTranscript(){
