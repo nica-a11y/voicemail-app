@@ -48,6 +48,17 @@
   .spinner { display: none; text-align: center; padding: 10px; color: #5746e3; font-weight: 600; font-size: 0.95rem; }
   .note { font-size: 0.8rem; color: #888; margin-top: 8px; text-align: center; }
   @media (max-width: 480px) { .details-grid { grid-template-columns: 1fr; } }
+  .dialpad-header { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1rem; color: #1a1a2e; margin-bottom: 12px; }
+  .dialpad-badge { background: #e8f5e9; color: #2e7d32; font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
+  .btn-dialpad {
+    width: 100%; padding: 11px; border-radius: 8px;
+    background: white; color: #5746e3; font-size: 0.95rem; font-weight: 600;
+    cursor: pointer; border: 2px solid #5746e3; transition: all 0.2s;
+  }
+  .btn-dialpad:hover { background: #f3f1ff; }
+  .btn-dialpad:disabled { color: #aaa; border-color: #ddd; cursor: not-allowed; background: white; }
+  .call-select-wrap { margin-top: 14px; }
+  .divider { border: none; border-top: 1.5px solid #eee; margin: 20px 0; }
 </style>
 </head>
 <body>
@@ -55,9 +66,27 @@
   <h1>📋 Voicemail Form Filler</h1>
   <p class="subtitle">Paste a voicemail transcript — we'll pull the details and write the summary for you.</p>
 
+  <div class="card" id="dialpadCard">
+    <div class="dialpad-header">
+      📞 Load from Dialpad
+      <span class="dialpad-badge">Connected</span>
+    </div>
+    <button class="btn-dialpad" onclick="fetchVoicemails()" id="fetchBtn">Fetch Recent Voicemails</button>
+    <div class="spinner" id="dialpadSpinner" style="display:none;">Connecting to Dialpad...</div>
+    <div class="call-select-wrap" id="callList" style="display:none;">
+      <label for="callSelect" style="margin-top:4px;">Select a voicemail:</label>
+      <select id="callSelect" onchange="loadTranscript(this.value)">
+        <option value="">— Choose a call —</option>
+      </select>
+      <div class="spinner" id="transcriptSpinner" style="display:none; margin-top:10px;">Loading transcript...</div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
   <div class="card">
     <label for="transcript">Voicemail Transcript</label>
-    <textarea id="transcript" style="min-height:150px;" placeholder="Paste the voicemail transcript here..."></textarea>
+    <textarea id="transcript" style="min-height:150px;" placeholder="Paste the voicemail transcript here, or use the Dialpad loader above..."></textarea>
     <button class="btn-primary" onclick="processTranscript()" id="analyzeBtn">Extract Details &amp; Summary</button>
     <div class="spinner" id="spinner">Reading transcript...</div>
   </div>
@@ -252,6 +281,58 @@ function processTranscript(){
     document.getElementById('analyzeBtn').disabled=false;
     document.getElementById('results').scrollIntoView({behavior:'smooth'});
   },400);
+}
+
+async function fetchVoicemails() {
+  const btn = document.getElementById('fetchBtn');
+  const spinner = document.getElementById('dialpadSpinner');
+  const callList = document.getElementById('callList');
+  btn.disabled = true;
+  spinner.style.display = 'block';
+  callList.style.display = 'none';
+  try {
+    const res = await fetch('/api/voicemails');
+    const data = await res.json();
+    if (data.error) { alert('Error: ' + data.error); return; }
+    const select = document.getElementById('callSelect');
+    select.innerHTML = '<option value="">— Choose a call —</option>';
+    if (!data.calls || data.calls.length === 0) {
+      select.innerHTML = '<option value="">No calls found in the last 7 days</option>';
+    } else {
+      data.calls.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.textContent = c.label;
+        select.appendChild(opt);
+      });
+    }
+    callList.style.display = 'block';
+  } catch(e) {
+    alert('Could not connect to Dialpad. Please try again.');
+  } finally {
+    btn.disabled = false;
+    spinner.style.display = 'none';
+  }
+}
+
+async function loadTranscript(callId) {
+  if (!callId) return;
+  const spinner = document.getElementById('transcriptSpinner');
+  spinner.style.display = 'block';
+  try {
+    const res = await fetch('/api/voicemails?call_id=' + encodeURIComponent(callId));
+    const data = await res.json();
+    if (data.transcript) {
+      document.getElementById('transcript').value = data.transcript;
+      document.getElementById('transcript').scrollIntoView({behavior:'smooth'});
+    } else {
+      alert('No transcript found for this call. Try selecting a different one.');
+    }
+  } catch(e) {
+    alert('Could not load the transcript. Please try again.');
+  } finally {
+    spinner.style.display = 'none';
+  }
 }
 
 function openForm(){

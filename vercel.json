@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "api/voicemails.py": {
+      "runtime": "python3.12"
+    }
+  }
+}
